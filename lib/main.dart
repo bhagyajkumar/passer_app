@@ -27,7 +27,6 @@ class MyApp extends StatelessWidget {
         '/signup': (context) => SignUpScreen(),
         '/events': (context) => EventsScreen(),
         '/create_event': (context) => CreateEventScreen(),
-        '/create_ticket': (context) => CreateTicketScreen(),
       },
       onGenerateRoute: (settings) {
         // Handle unknown routes

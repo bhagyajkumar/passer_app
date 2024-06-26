@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:passer/services/api_service.dart';
+import 'create_ticket_screen.dart';
+import 'package:qr_flutter/qr_flutter.dart';
+import 'package:qr_code_scanner/qr_code_scanner.dart';
 
 class EventDetailScreen extends StatelessWidget {
   final int eventId;
@@ -11,24 +15,90 @@ class EventDetailScreen extends StatelessWidget {
       appBar: AppBar(
         title: Text('Event Detail'),
       ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          // Navigate to CreateTicketScreen with the eventId
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => CreateTicketScreen(eventId: eventId),
+            ),
+          );
+        },
+        child: Icon(Icons.add),
+      ),
       body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              'Event ID: $eventId',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context); // Navigate back to previous screen
-              },
-              child: Text('Go Back'),
-            ),
-          ],
+        child: FutureBuilder<List<dynamic>>(
+          future: ApiService().getTickets(eventId),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return CircularProgressIndicator();
+            } else if (snapshot.hasError) {
+              return Text('Failed to load tickets: ${snapshot.error}');
+            } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+              return Text('No tickets available for this event.');
+            } else {
+              return ListView.builder(
+                itemCount: snapshot.data!.length,
+                itemBuilder: (context, index) {
+                  final ticket = snapshot.data![index];
+                  return ListTile(
+                    title: Text('Ticket #${index + 1}: ${ticket['id']}'),
+                    onTap: () {
+                      // Show dialog with ticket details
+                      _showTicketDetailsDialog(context, ticket);
+                    },
+                  );
+                },
+              );
+            }
+          },
         ),
       ),
+    );
+  }
+
+  // Function to show a dialog with ticket details
+  Future<void> _showTicketDetailsDialog(BuildContext context, dynamic ticket) {
+    return showDialog<void>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Ticket Details'),
+          content: SingleChildScrollView(
+            child: ListBody(
+              children: <Widget>[
+                Text('Ticket ID: ${ticket['id']}'),
+                SizedBox(height: 10),
+                Text('Description: ${ticket['description']}'),
+                SizedBox(
+                  height: 320.0,
+                  width: 320.0,
+                  child: QrImageView(
+                    data: ticket['id'],
+                    version: QrVersions.auto,
+                    size: 320,
+                    gapless: false,
+                    embeddedImage:
+                        AssetImage('assets/images/my_embedded_image.png'),
+                    embeddedImageStyle: QrEmbeddedImageStyle(
+                      size: Size(80, 80),
+                    ),
+                  ),
+                )
+              ],
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: Text('Close'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
     );
   }
 }

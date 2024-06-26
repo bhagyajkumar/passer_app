@@ -1,54 +1,39 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
-import '../models/event_model.dart';
 import '../widgets/custom_button.dart';
 
 class CreateTicketScreen extends StatefulWidget {
+  final int eventId;
+
+  // Constructor to accept eventId as a required parameter
+  CreateTicketScreen({Key? key, required this.eventId}) : super(key: key);
+
   @override
   _CreateTicketScreenState createState() => _CreateTicketScreenState();
 }
 
 class _CreateTicketScreenState extends State<CreateTicketScreen> {
   final ApiService apiService = ApiService();
-  Event? selectedEvent;
-  List<Event> events = [];
 
-  @override
-  void initState() {
-    super.initState();
-    _loadEvents();
-  }
-
-  Future<void> _loadEvents() async {
-    try {
-      final data = await apiService.getEvents();
-      setState(() {
-        events = data.map((event) => Event.fromJson(event)).toList();
-      });
-    } catch (e) {
-      // Handle error
-    }
-  }
+  // Controllers for additional ticket fields
+  final TextEditingController _descriptionController = TextEditingController();
 
   void _createTicket() async {
-    if (selectedEvent != null) {
-      try {
-        final ticketData = {
-          'event': selectedEvent!.id,
-        };
-        await apiService.createTicket(ticketData);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Ticket created successfully')),
-        );
-        Navigator.pop(context);
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to create ticket: $e')),
-        );
-      }
-    } else {
+    try {
+      final ticketData = {
+        'event_id': widget.eventId,  // Use the passed eventId
+        'description': _descriptionController.text,
+      };
+      print(ticketData);
+      await apiService.createTicket(ticketData);
+      
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Please select an event')),
+        SnackBar(content: Text('Ticket created successfully')),
+      );
+      Navigator.pop(context);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to create ticket: $e')),
       );
     }
   }
@@ -61,23 +46,25 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            DropdownButton<Event>(
-              hint: Text('Select Event'),
-              value: selectedEvent,
-              onChanged: (Event? newValue) {
-                setState(() {
-                  selectedEvent = newValue!;
-                });
-              },
-              items: events.map<DropdownMenuItem<Event>>((Event event) {
-                return DropdownMenuItem<Event>(
-                  value: event,
-                  child: Text(event.name),
-                );
-              }).toList(),
+            Text(
+              'Creating ticket for Event ID: ${widget.eventId}',
+              style: TextStyle(fontSize: 18),
             ),
             SizedBox(height: 20),
-            CustomButton(text: 'Create Ticket', onPressed: _createTicket),
+           
+            SizedBox(height: 20),
+            TextField(
+              controller: _descriptionController,
+              decoration: InputDecoration(
+                labelText: 'Description',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            SizedBox(height: 20),
+            CustomButton(
+              text: 'Create Ticket',
+              onPressed: _createTicket,
+            ),
           ],
         ),
       ),

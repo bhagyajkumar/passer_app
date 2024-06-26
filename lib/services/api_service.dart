@@ -94,14 +94,18 @@ class ApiService {
   }
 
   // Ticket Services
-  Future<List<dynamic>> getTickets() async {
+  Future<List<dynamic>> getTickets(int eventId) async {
     final response = await _performRequest(
-      (headers) => http.get(Uri.parse('$baseUrl/tickets/'), headers: headers),
+      (headers) => http.get(
+        Uri.parse('$baseUrl/tickets/?event_id=$eventId'),
+        headers: headers,
+      ),
     );
+
     if (response.statusCode == 200) {
       return json.decode(response.body);
     } else {
-      throw Exception('Failed to load tickets');
+      throw Exception('Failed to load tickets for event ID: $eventId');
     }
   }
 
