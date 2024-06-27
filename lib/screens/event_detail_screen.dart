@@ -72,18 +72,13 @@ class EventDetailScreen extends StatelessWidget {
                 SizedBox(height: 10),
                 Text('Description: ${ticket['description']}'),
                 SizedBox(
-                  height: 320.0,
-                  width: 320.0,
+                  height: 320,
+                  width: 320,
                   child: QrImageView(
                     data: ticket['id'],
                     version: QrVersions.auto,
                     size: 320,
                     gapless: false,
-                    embeddedImage:
-                        AssetImage('assets/images/my_embedded_image.png'),
-                    embeddedImageStyle: QrEmbeddedImageStyle(
-                      size: Size(80, 80),
-                    ),
                   ),
                 )
               ],
