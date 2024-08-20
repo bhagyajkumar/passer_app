@@ -1,15 +1,15 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:passer/services/api_service.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:share_plus/share_plus.dart';
-import 'create_ticket_screen.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:qr_code_scanner/qr_code_scanner.dart';
+import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
+
+import 'create_ticket_screen.dart';
 
 class EventDetailScreen extends StatelessWidget {
   final int eventId;
@@ -21,6 +21,14 @@ class EventDetailScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text('Event Detail'),
+        actions: [
+          IconButton(
+            onPressed: () {
+              _showQRScannerDialog(context);
+            },
+            icon: Icon(Icons.camera),
+          ),
+        ],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
@@ -91,7 +99,7 @@ class EventDetailScreen extends StatelessWidget {
                       size: 320,
                       gapless: false,
                     ),
-                  )
+                  ),
                 ],
               ),
             ),
@@ -102,7 +110,6 @@ class EventDetailScreen extends StatelessWidget {
                 await _screenshotController
                     .capture(delay: const Duration(milliseconds: 10))
                     .then((Uint8List? image) async {
-                  // Note the change to Uint8List?
                   if (image != null) {
                     final directory = await getApplicationDocumentsDirectory();
                     final imagePath =
@@ -126,5 +133,78 @@ class EventDetailScreen extends StatelessWidget {
         );
       },
     );
+  }
+
+  // Function to show the QR scanner dialog
+  Future<void> _showQRScannerDialog(BuildContext context) {
+    return showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return QRScannerDialog();
+      },
+    );
+  }
+}
+
+class QRScannerDialog extends StatefulWidget {
+  @override
+  _QRScannerDialogState createState() => _QRScannerDialogState();
+}
+
+class _QRScannerDialogState extends State<QRScannerDialog> {
+  final GlobalKey qrKey = GlobalKey(debugLabel: 'QR');
+  Barcode? result;
+  QRViewController? controller;
+
+  @override
+  void reassemble() {
+    super.reassemble();
+    if (Platform.isAndroid) {
+      controller?.pauseCamera();
+    }
+    controller?.resumeCamera();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text('Scan QR Code'),
+      content: Container(
+        width: 300,
+        height: 300,
+        child: QRView(
+          key: qrKey,
+          onQRViewCreated: _onQRViewCreated,
+        ),
+      ),
+      actions: <Widget>[
+        TextButton(
+          child: Text('Close'),
+          onPressed: () {
+            controller?.dispose();
+            Navigator.of(context).pop();
+          },
+        ),
+      ],
+    );
+  }
+
+  void _onQRViewCreated(QRViewController controller) {
+    this.controller = controller;
+    controller.scannedDataStream.listen((scanData) {
+      setState(() {
+        result = scanData;
+      });
+      if (result != null) {
+        print('Scanned QR Code: ${result!.code}');
+        Navigator.of(context).pop(); // Close the dialog
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    controller?.dispose();
+    super.dispose();
   }
 }

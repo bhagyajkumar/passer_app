@@ -51,6 +51,13 @@ android {
             signingConfig = signingConfigs.debug
         }
     }
+    configurations.all {
+        resolutionStrategy.eachDependency { details ->
+            if (details.requested.group == 'org.jetbrains.kotlin') {
+                details.useVersion "1.8.22" // Use the latest Kotlin version you're targeting
+            }
+        }
+    }
 }
 
 flutter {
